@@ -70,12 +70,17 @@ public class LeaderElection<T extends Comparable<T>> extends Thread
 			{
 				if (headPolled)
 				{
-					Set<T> downNodes = networkManager.getNetwork();
-					downNodes.removeAll(networkManager.getUpNodes());
-					downNodes.remove(networkManager.getSelf());
-					if (!downNodes.isEmpty())
+					Set<T> nodes = networkManager.getNetwork();
+					Set<T> upNodes = networkManager.getUpNodes();
+					//If this node is not found in the responses, the poll was invalid
+					if (upNodes.contains(networkManager.getSelf()))
 					{
-						networkManager.broadcastRemoveFromNetwork(downNodes);
+						nodes.removeAll(upNodes);
+						nodes.remove(networkManager.getSelf());
+						if (!nodes.isEmpty())
+						{
+							networkManager.broadcastRemoveFromNetwork(nodes);
+						}
 					}
 				}
 				headPolled = true;

@@ -203,7 +203,6 @@ public class RabbitMQNetworkManager<T extends Comparable<T>> implements NetworkM
 	{
 		try
 		{
-			removeFromNetwork(nodes);
 			Request<T> request = new Request<T>(id, RequestType.REMOVE_FROM_NETWORK, gson.toJson(nodes));
 			broadcastMessage(exchangeName, null, request);
 		}

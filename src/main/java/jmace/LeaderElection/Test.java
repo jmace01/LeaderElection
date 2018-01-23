@@ -10,15 +10,19 @@ public class Test
 {
 	public static final String RMQ_HOST = "localhost";
 	public static final String RMQ_QUEUE = "TestQueue";
-	public static final long HEAD_POLL_DELAY_MS = 1500;
-	public static final long NODE_POLL_DELAY_MS = 4000;
-	public static final int NUM_NODES = 8;
+	public static final long HEAD_POLL_DELAY_MS = 1200;
+	public static final long NODE_POLL_DELAY_MS = 3000;
+	public static final int NUM_NODES = 5;
 	public static final int NUM_LEADERS = 3; 
 	
     public static void main(String[] args) throws InterruptedException
     {
     		Set<LeaderElection<String>> nodes = new HashSet<>();
     		Set<String> downed = new HashSet<>();
+    		
+    		System.out.println("=======================================");
+        System.out.println("      Nodes joining the network        ");
+        System.out.println("=======================================");
     		
         for (int i = 0; i < NUM_NODES; i++)
         {
@@ -75,7 +79,7 @@ public class Test
         
         for (LeaderElection<String> node : nodes)
         {
-        		System.out.println("[ " + node.getSelfId() + " ]\tisHead: " + node.isHead() + ",\tisLeader: " + node.isLeader() + ",\tkilled: " + downed.contains(node.getSelfId()));
+        		System.out.println("[ " + node.getSelfId() + " ]\tisHead: " + node.isHead() + ",\tisLeader: " + node.isLeader() + ",\t killed: " + downed.contains(node.getSelfId()));
         }
     }
 }
