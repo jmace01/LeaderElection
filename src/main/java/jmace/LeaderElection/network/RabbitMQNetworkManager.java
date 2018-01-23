@@ -32,6 +32,14 @@ public class RabbitMQNetworkManager<T extends Comparable<T>> implements NetworkM
 	private final Network<T> network;
 	ChangeSubscriber subscriber;
 	
+	/**
+	 * Constructor
+	 * 
+	 * @param id the ID of this node
+	 * @param numberOfLeaders the number of leaders allowed on the network
+	 * @param queueHost the RabbitMQ host
+	 * @param exchangeName the RabbitMQ exchange
+	 */
 	public RabbitMQNetworkManager(T id, int numberOfLeaders, String queueHost, String exchangeName)
 	{
 		this.id = id;
@@ -47,16 +55,26 @@ public class RabbitMQNetworkManager<T extends Comparable<T>> implements NetworkM
 		this.subscriber = null;
 	}
 	
+	/**
+	 * Get the ID of this node
+	 */
 	public T getSelf()
 	{
 		return id;
 	}
 	
+	/**
+	 * Get the ID of the current network head
+	 */
 	public T getHead()
 	{
 		return network.getHeadNode();
 	}
 	
+	/**
+	 * Get whether or not this node is the head of the network
+	 * @return true if this node is the network head
+	 */
 	public Boolean isHead()
 	{
 		if (network.isEmpty())
@@ -66,6 +84,10 @@ public class RabbitMQNetworkManager<T extends Comparable<T>> implements NetworkM
 		return id.equals(network.getHeadNode());
 	}
 	
+	/**
+	 * Check if this node currently a leader on the network
+	 * @return true if this node is a leader, null if the network hasn't been established, false otherwise
+	 */
 	public Boolean isLeader()
 	{
 		if (network.isEmpty())
@@ -75,6 +97,10 @@ public class RabbitMQNetworkManager<T extends Comparable<T>> implements NetworkM
 		return network.getLeaders(numberOfLeaders).contains(id);
 	}
 	
+	/**
+	 * Checks if the head node has polled since the last time this method was called
+	 * @return true if the head node has polled, false otherwise
+	 */
 	public boolean isHeadUp()
 	{
 		boolean wasUp = headIsUp;
@@ -82,21 +108,38 @@ public class RabbitMQNetworkManager<T extends Comparable<T>> implements NetworkM
 		return wasUp;
 	}
 	
+	/**
+	 * Gets all nodes that have sent this node a still alive message
+	 * @return a set of all nodes that responded with a still alive message
+	 */
 	public Set<T> getUpNodes()
 	{
 		return new TreeSet<>(pollReponders);
 	}
 	
+	/**
+	 * Gets all the nodes on the network
+	 * @return a set of all nodes on the network
+	 */
 	public Set<T> getNetwork()
 	{
 		return new TreeSet<>(network.getNetwork());
 	}
 	
+	/**
+	 * Sets a subscriber for network changes
+	 * @param subscriber the callback function
+	 */
 	public void setChangeSubscriber(ChangeSubscriber subscriber)
 	{
 		this.subscriber = subscriber;
 	}
 	
+	/**
+	 * Establishes the connections to RabbitMQ and sets up a consumer
+	 * @throws IOException
+	 * @throws TimeoutException
+	 */
 	private void establishQueueConnection() throws IOException, TimeoutException
 	{
 		ConnectionFactory factory = new ConnectionFactory();
@@ -127,6 +170,9 @@ public class RabbitMQNetworkManager<T extends Comparable<T>> implements NetworkM
         channel.basicConsume(queueName, true, consumer);
 	}
 
+	/**
+	 * Shuts down the connection to RabbitMQ
+	 */
 	public void stop()
 	{
 		try
@@ -145,6 +191,10 @@ public class RabbitMQNetworkManager<T extends Comparable<T>> implements NetworkM
 		}
 	}
 	
+	/**
+	 * Routes messages to the proper functions
+	 * @param request the incoming message
+	 */
 	private void handleMessage(Request<T> request)
 	{
 		switch (request.getType())
@@ -168,6 +218,12 @@ public class RabbitMQNetworkManager<T extends Comparable<T>> implements NetworkM
 		}
 	}
 	
+	/**
+	 * Add a node to the network
+	 * @param sender the node that requested the addition
+	 * @param toAdd to nodes to add
+	 * @param resendRoutingKey the routing key if we need to send back missing nodes
+	 */
 	private void addToNetwork(T sender, Set<T> toAdd, String resendRoutingKey)
 	{
 		//If we have anything the sending process is missing, send over what we have
@@ -187,6 +243,10 @@ public class RabbitMQNetworkManager<T extends Comparable<T>> implements NetworkM
 			broadcastNetwork(resendRoutingKey);
 	}
 	
+	/**
+	 * Remove nodes from the network
+	 * @param toRemove the nodes to remove
+	 */
 	public void removeFromNetwork(Set<T> toRemove)
 	{
 		if (toRemove.contains(getHead()))
@@ -199,6 +259,10 @@ public class RabbitMQNetworkManager<T extends Comparable<T>> implements NetworkM
 			subscriber.handleChange();
 	}
 	
+	/**
+	 * Tell the nodes on the network to remove a set of nodes from the network
+	 * @param nodes the nodes to remove
+	 */
 	public void broadcastRemoveFromNetwork(Set<T> nodes)
 	{
 		try
@@ -212,6 +276,10 @@ public class RabbitMQNetworkManager<T extends Comparable<T>> implements NetworkM
 		}
 	}
 	
+	/**
+	 * Send a message to the head node letting it know this node is still responsive
+	 * @param pollRequest the original poll request
+	 */
 	private void sendStillAlive(Request<T> pollRequest)
 	{
 		try
@@ -226,11 +294,18 @@ public class RabbitMQNetworkManager<T extends Comparable<T>> implements NetworkM
 		}
 	}
 	
+	/**
+	 * Send out this node's copy of the network
+	 */
 	public void broadcastNetwork()
 	{
 		broadcastNetwork(null);
 	}
 	
+	/**
+	 * Send out this node's copy of the network
+	 * @param resendRoutingKey the node to send the network to
+	 */
 	private void broadcastNetwork(String resendRoutingKey)
 	{
 		try
@@ -254,6 +329,9 @@ public class RabbitMQNetworkManager<T extends Comparable<T>> implements NetworkM
 		}
 	}
 	
+	/**
+	 * Send a request to determine what nodes are still responsive
+	 */
 	public void pollForNodes()
 	{
 		try
@@ -268,6 +346,15 @@ public class RabbitMQNetworkManager<T extends Comparable<T>> implements NetworkM
 		}
 	}
 	
+	/**
+	 * Send a message over RabbitMQ
+	 * @param queueName the name of the queue to send the message through
+	 * @param routingKey the key to send a message through (e.g. the node to send a message to)
+	 * @param request the request to send
+	 * @throws UnsupportedEncodingException
+	 * @throws IOException
+	 * @throws TimeoutException
+	 */
 	private void broadcastMessage(String queueName, String routingKey, Request<T> request) throws UnsupportedEncodingException, IOException, TimeoutException
 	{
 		if (channel == null)

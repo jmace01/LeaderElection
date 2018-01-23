@@ -15,6 +15,11 @@ public class Test
 	public static final int NUM_NODES = 5;
 	public static final int NUM_LEADERS = 3; 
 	
+	/**
+	 * Simple demo
+	 * @param args unused
+	 * @throws InterruptedException unused
+	 */
     public static void main(String[] args) throws InterruptedException
     {
     		Set<LeaderElection<String>> nodes = new HashSet<>();
