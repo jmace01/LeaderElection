@@ -36,7 +36,7 @@ public class LeaderElection<T extends Comparable<T>> extends Thread
 		this.nodePollDelayMS = nodePollDelayMS;
 		this.task = null;
 		this.networkManager = networkManager;
-		networkManager.setChangeSubscriber(() -> {
+		networkManager.getNetwork().addChangeSubscriber(() -> {
 			handleNetworkChange();
 		});
 	}
@@ -87,7 +87,7 @@ public class LeaderElection<T extends Comparable<T>> extends Thread
 				if (headPolled)
 				{
 					//Get all the nodes on the network
-					Set<T> nodes = networkManager.getNetwork();
+					Set<T> nodes = networkManager.getNetwork().getNodes();
 					//Get all the nodes that responded
 					Set<T> upNodes = networkManager.getUpNodes();
 					//If this node is not found in the responses, the poll was invalid

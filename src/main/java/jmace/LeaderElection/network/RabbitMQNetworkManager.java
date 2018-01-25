@@ -18,7 +18,7 @@ import jmace.LeaderElection.messages.Request;
 import jmace.LeaderElection.messages.RequestType;
 import jmace.LeaderElection.task.ChangeSubscriber;
 
-public class RabbitMQNetworkManager<T extends Comparable<T>> implements NetworkManager<T>
+public class RabbitMQNetworkManager<T extends Comparable<T>> extends NetworkManager<T>
 {
 	private final T id;
 	private final int numberOfLeaders;
@@ -29,7 +29,6 @@ public class RabbitMQNetworkManager<T extends Comparable<T>> implements NetworkM
 	boolean headIsUp;
 	private Set<T> pollReponders;
 	private final Gson gson;
-	private final Network<T> network;
 	ChangeSubscriber subscriber;
 	
 	/**
@@ -51,7 +50,6 @@ public class RabbitMQNetworkManager<T extends Comparable<T>> implements NetworkM
 		this.headIsUp = true;
 		this.pollReponders = null;
 		this.gson = new Gson();
-		this.network = new Network<>();
 		this.subscriber = null;
 	}
 	
@@ -68,7 +66,7 @@ public class RabbitMQNetworkManager<T extends Comparable<T>> implements NetworkM
 	 */
 	public T getHead()
 	{
-		return network.getHeadNode();
+		return getNetwork().getHeadNode();
 	}
 	
 	/**
@@ -77,11 +75,11 @@ public class RabbitMQNetworkManager<T extends Comparable<T>> implements NetworkM
 	 */
 	public Boolean isHead()
 	{
-		if (network.isEmpty())
+		if (getNetwork().isEmpty())
 		{
 			return null;
 		}
-		return id.equals(network.getHeadNode());
+		return id.equals(getNetwork().getHeadNode());
 	}
 	
 	/**
@@ -90,11 +88,11 @@ public class RabbitMQNetworkManager<T extends Comparable<T>> implements NetworkM
 	 */
 	public Boolean isLeader()
 	{
-		if (network.isEmpty())
+		if (getNetwork().isEmpty())
 		{
 			return null;
 		}
-		return network.getLeaders(numberOfLeaders).contains(id);
+		return getNetwork().getLeaders(numberOfLeaders).contains(id);
 	}
 	
 	/**
@@ -115,24 +113,6 @@ public class RabbitMQNetworkManager<T extends Comparable<T>> implements NetworkM
 	public Set<T> getUpNodes()
 	{
 		return new TreeSet<>(pollReponders);
-	}
-	
-	/**
-	 * Gets all the nodes on the network
-	 * @return a set of all nodes on the network
-	 */
-	public Set<T> getNetwork()
-	{
-		return new TreeSet<>(network.getNetwork());
-	}
-	
-	/**
-	 * Sets a subscriber for network changes
-	 * @param subscriber the callback function
-	 */
-	public void setChangeSubscriber(ChangeSubscriber subscriber)
-	{
-		this.subscriber = subscriber;
 	}
 	
 	/**
@@ -212,7 +192,7 @@ public class RabbitMQNetworkManager<T extends Comparable<T>> implements NetworkM
 			break;
 			case STILL_ALIVE:
 				pollReponders.add(request.getRequestingID());
-				if (network.addNode(request.getRequestingID()))
+				if (getNetwork().addNode(request.getRequestingID()))
 					broadcastNetwork();
 			break;
 		}
@@ -228,9 +208,9 @@ public class RabbitMQNetworkManager<T extends Comparable<T>> implements NetworkM
 	{
 		//If we have anything the sending process is missing, send over what we have
 		Boolean isHead = isHead();
-		boolean rebroadcast = isHead != null && isHead && toAdd.addAll(network.getNetwork());
+		boolean rebroadcast = isHead != null && isHead && toAdd.addAll(getNetwork().getNodes());
 		
-		network.addAllNodes(toAdd);
+		getNetwork().addAllNodes(toAdd);
 		if (isHead() && pollReponders != null)
 		{
 			pollReponders.add(sender);
@@ -255,7 +235,7 @@ public class RabbitMQNetworkManager<T extends Comparable<T>> implements NetworkM
 			//so that it has time to respond
 			headIsUp = true;
 		}
-		if (network.removeAllNodes(toRemove) && subscriber != null)
+		if (getNetwork().removeAllNodes(toRemove) && subscriber != null)
 			subscriber.handleChange();
 	}
 	
@@ -311,9 +291,9 @@ public class RabbitMQNetworkManager<T extends Comparable<T>> implements NetworkM
 		try
 		{
 			Set<T> nodes;
-			if (!network.isEmpty())
+			if (!getNetwork().isEmpty())
 			{
-				nodes = network.getNetwork();
+				nodes = getNetwork().getNodes();
 			}
 			else
 			{

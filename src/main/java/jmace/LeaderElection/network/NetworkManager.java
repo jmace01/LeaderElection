@@ -3,18 +3,27 @@ package jmace.LeaderElection.network;
 import java.util.Set;
 import jmace.LeaderElection.task.ChangeSubscriber;
 
-public interface NetworkManager<T extends Comparable<T>>
+public abstract class NetworkManager<T extends Comparable<T>>
 {
-	public T getSelf();
-	public T getHead();
-	public Boolean isHead();
-	public Boolean isLeader();
-	public boolean isHeadUp();
-	public Set<T> getUpNodes();
-	public Set<T> getNetwork();
-	public void pollForNodes();
-	public void broadcastNetwork();
-	public void setChangeSubscriber(ChangeSubscriber subscriber);
-	public void broadcastRemoveFromNetwork(Set<T> nodes);
-	public void stop();
+	private Network<T> network;
+	public NetworkManager()
+	{
+		this.network = new Network<>();
+	}
+	
+	public final Network<T> getNetwork()
+	{
+		return this.network;
+	}
+	
+	public abstract T getSelf();
+	public abstract T getHead();
+	public abstract Boolean isHead();
+	public abstract Boolean isLeader();
+	public abstract boolean isHeadUp();
+	public abstract Set<T> getUpNodes();
+	public abstract void pollForNodes();
+	public abstract void broadcastNetwork();
+	public abstract void broadcastRemoveFromNetwork(Set<T> nodes);
+	public abstract void stop();
 }
