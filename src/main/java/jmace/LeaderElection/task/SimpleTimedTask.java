@@ -3,6 +3,7 @@ package jmace.LeaderElection.task;
 public class SimpleTimedTask extends Thread
 {
 	private boolean isDead;
+	private boolean isPaused;
 	private final long time;
 	private final SimpleTimedTaskExecution exec;
 	
@@ -20,7 +21,7 @@ public class SimpleTimedTask extends Thread
 			try
 			{
 				Thread.sleep(time);
-				if (!isDead)
+				if (!isDead && !isPaused)
 				{
 					exec.run();
 				}
@@ -30,6 +31,16 @@ public class SimpleTimedTask extends Thread
 			}
 		}
 		while (!isDead);
+	}
+	
+	public void pause()
+	{
+		isPaused = true;
+	}
+	
+	public void unpause()
+	{
+		isPaused = false;
 	}
 	
 	public void restart()

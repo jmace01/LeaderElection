@@ -1,7 +1,7 @@
 package jmace.LeaderElection.network;
 
+import java.io.IOException;
 import java.util.Set;
-import jmace.LeaderElection.task.ChangeSubscriber;
 
 public abstract class NetworkManager<T extends Comparable<T>>
 {
@@ -25,5 +25,6 @@ public abstract class NetworkManager<T extends Comparable<T>>
 	public abstract void pollForNodes();
 	public abstract void broadcastNetwork();
 	public abstract void broadcastRemoveFromNetwork(Set<T> nodes);
+	public abstract void start();
 	public abstract void stop();
 }

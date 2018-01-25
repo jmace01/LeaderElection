@@ -1,5 +1,6 @@
 package jmace.LeaderElection;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -19,8 +20,9 @@ public class Test
 	 * Simple demo
 	 * @param args unused
 	 * @throws InterruptedException unused
+	 * @throws IOException 
 	 */
-    public static void main(String[] args) throws InterruptedException
+    public static void main(String[] args) throws InterruptedException, IOException
     {
     		Set<LeaderElection<String>> nodes = new HashSet<>();
     		Set<String> downed = new HashSet<>();
@@ -40,14 +42,16 @@ public class Test
         Thread.sleep(4000);
         
         System.out.println("=======================================");
-        System.out.println("      Taking down a leader node        ");
+        System.out.println("      Pausing down a leader node       ");
         System.out.println("=======================================");
         
+        LeaderElection<String> paused = null;
         for (LeaderElection<String> node : nodes)
         {
         		if (node.isLeader() && !node.isHead())
         		{
-        			node.interrupt();
+        			paused = node;
+        			node.pause();
         			downed.add(node.getSelfId());
         			break;
         		}
@@ -70,6 +74,17 @@ public class Test
         }
         
         Thread.sleep((HEAD_POLL_DELAY_MS + NODE_POLL_DELAY_MS) * 2);
+        
+        System.out.println("=======================================");
+        System.out.println("         Unpausing leader node         ");
+        System.out.println("=======================================");
+        
+        if (paused != null)
+        {
+        		paused.unpause();
+        }
+        
+        Thread.sleep(HEAD_POLL_DELAY_MS * 3);
         
         System.out.println("=======================================");
         System.out.println("      Stopping all of the nodes        ");

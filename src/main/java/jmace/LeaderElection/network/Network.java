@@ -53,6 +53,12 @@ public class Network<T extends Comparable<T>>
 		return changed;
 	}
 	
+	public void replace(Collection<T> nodes)
+	{
+		network.clear();
+		addAllNodes(nodes);
+	}
+	
 	public Set<T> getNodes()
 	{
 		return new TreeSet<>(network);

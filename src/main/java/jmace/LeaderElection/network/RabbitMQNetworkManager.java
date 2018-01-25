@@ -20,16 +20,18 @@ import jmace.LeaderElection.task.ChangeSubscriber;
 
 public class RabbitMQNetworkManager<T extends Comparable<T>> extends NetworkManager<T>
 {
+	private static final String CONSUMER_TAG = "basicConsumer";
+	
 	private final T id;
 	private final int numberOfLeaders;
 	private final String queueHost;
 	private final String exchangeName;
+	private String queueName;
 	private Connection connection;
 	private Channel channel;
 	boolean headIsUp;
 	private Set<T> pollReponders;
 	private final Gson gson;
-	ChangeSubscriber subscriber;
 	
 	/**
 	 * Constructor
@@ -50,7 +52,6 @@ public class RabbitMQNetworkManager<T extends Comparable<T>> extends NetworkMana
 		this.headIsUp = true;
 		this.pollReponders = null;
 		this.gson = new Gson();
-		this.subscriber = null;
 	}
 	
 	/**
@@ -127,7 +128,7 @@ public class RabbitMQNetworkManager<T extends Comparable<T>> extends NetworkMana
         connection = factory.newConnection();
         channel = connection.createChannel();
         channel.exchangeDeclare(exchangeName, "topic");
-        String queueName = channel.queueDeclare().getQueue();
+        queueName = channel.queueDeclare().getQueue();
         channel.queueBind(queueName, exchangeName, id.toString());
         channel.queueBind(queueName, exchangeName, "all");
         
@@ -147,7 +148,19 @@ public class RabbitMQNetworkManager<T extends Comparable<T>> extends NetworkMana
         			}
         		}
         };
-        channel.basicConsume(queueName, true, consumer);
+        channel.basicConsume(queueName, true, CONSUMER_TAG, consumer);
+	}
+	
+	public void start()
+	{
+		try
+		{
+			establishQueueConnection();
+		}
+		catch (Exception e)
+		{
+			throw new RuntimeException(e);
+		}
 	}
 
 	/**
@@ -216,9 +229,6 @@ public class RabbitMQNetworkManager<T extends Comparable<T>> extends NetworkMana
 			pollReponders.add(sender);
 		}
 		
-		if (subscriber != null)
-			subscriber.handleChange();
-		
 		if (rebroadcast)
 			broadcastNetwork(resendRoutingKey);
 	}
@@ -235,8 +245,7 @@ public class RabbitMQNetworkManager<T extends Comparable<T>> extends NetworkMana
 			//so that it has time to respond
 			headIsUp = true;
 		}
-		if (getNetwork().removeAllNodes(toRemove) && subscriber != null)
-			subscriber.handleChange();
+		getNetwork().removeAllNodes(toRemove);
 	}
 	
 	/**

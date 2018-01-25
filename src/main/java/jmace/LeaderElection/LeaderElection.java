@@ -1,5 +1,6 @@
 package jmace.LeaderElection;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -47,6 +48,18 @@ public class LeaderElection<T extends Comparable<T>> extends Thread
 	public void run()
 	{
 		networkManager.broadcastNetwork();
+	}
+	
+	public void pause() throws IOException
+	{
+		task.pause();
+		networkManager.stop();
+	}
+	
+	public void unpause() throws IOException
+	{
+		task.unpause();
+		networkManager.start();
 	}
 	
 	public Boolean isHead()
