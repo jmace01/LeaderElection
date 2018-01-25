@@ -3,39 +3,57 @@ package jmace.LeaderElection.network;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+
+import jmace.LeaderElection.task.ChangeSubscriber;
 
 public class Network<T extends Comparable<T>>
 {
 	private final Set<T> network;
+	private final List<ChangeSubscriber> subscribers;
 	
 	public Network()
 	{
 		this.network = new TreeSet<>();
+		this.subscribers = new ArrayList<>();
+	}
+	
+	public void addChangeSubscriber(ChangeSubscriber subscriber)
+	{
+		subscribers.add(subscriber);
 	}
 	
 	public boolean addNode(T node)
 	{
-		return network.add(node);
+		boolean changed = network.add(node);
+		if (changed) alertSubscribers();
+		return changed;
 	}
 	
 	public boolean addAllNodes(Collection<T> nodes)
 	{
-		return network.addAll(nodes);
+		boolean changed = network.addAll(nodes); 
+		if (changed) alertSubscribers();
+		return changed;
 	}
 	
 	public boolean removeAllNodes(Collection<T> nodes)
 	{
-		return network.removeAll(nodes);
+		boolean changed = network.removeAll(nodes);
+		if (changed) alertSubscribers();
+		return changed;
 	}
 	
 	public boolean removeNode(T node)
 	{
-		return network.remove(node);
+		boolean changed = network.remove(node);
+		if (changed) alertSubscribers();
+		return changed;
 	}
 	
-	public Set<T> getNetwork()
+	public Set<T> getNodes()
 	{
 		return new TreeSet<>(network);
 	}
@@ -57,5 +75,10 @@ public class Network<T extends Comparable<T>>
 	public Set<T> getLeaders(int numberOfLeaders)
 	{
 		return new TreeSet<>(new ArrayList<>(network).subList(0, Math.min(network.size(), numberOfLeaders)));
+	}
+	
+	private void alertSubscribers()
+	{
+		subscribers.forEach(s -> s.handleChange());
 	}
 }
