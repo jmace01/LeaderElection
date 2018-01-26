@@ -73,7 +73,7 @@ public class Test
     {
     		Set<String> downed = new HashSet<>();
     		
-        printMessage("Nodes joinging the network");
+        printMessage("Nodes joining the network");
         Set<LeaderElection<String>> nodes = createNodes(NUM_NODES, NUM_LEADERS, RMQ_HOST, RMQ_QUEUE, HEAD_POLL_DELAY_MS, NODE_POLL_DELAY_MS);
         Thread.sleep(4000);
         
