@@ -31,6 +31,7 @@ public class RabbitMQNetworkManager<T extends Comparable<T>> extends NetworkMana
 	boolean headIsUp;
 	private Set<T> pollReponders;
 	private final Gson gson;
+	private boolean stopped;
 	
 	/**
 	 * Constructor
@@ -51,6 +52,7 @@ public class RabbitMQNetworkManager<T extends Comparable<T>> extends NetworkMana
 		this.headIsUp = true;
 		this.pollReponders = null;
 		this.gson = new Gson();
+		this.stopped = false;
 	}
 	
 	/**
@@ -152,6 +154,7 @@ public class RabbitMQNetworkManager<T extends Comparable<T>> extends NetworkMana
 	
 	public void start()
 	{
+		stopped = false;
 		try
 		{
 			establishQueueConnection();
@@ -167,6 +170,7 @@ public class RabbitMQNetworkManager<T extends Comparable<T>> extends NetworkMana
 	 */
 	public void stop()
 	{
+		stopped = true;
 		try
 		{
 			if (channel != null) channel.close();
@@ -345,6 +349,11 @@ public class RabbitMQNetworkManager<T extends Comparable<T>> extends NetworkMana
 	 */
 	private void broadcastMessage(String queueName, String routingKey, Request<T> request) throws UnsupportedEncodingException, IOException, TimeoutException
 	{
+		if (stopped)
+		{
+			return;
+		}
+		
 		if (channel == null)
 		{
 			establishQueueConnection();

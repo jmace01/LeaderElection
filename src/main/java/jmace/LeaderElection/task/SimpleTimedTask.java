@@ -41,6 +41,7 @@ public class SimpleTimedTask extends Thread
 	public void unpause()
 	{
 		isPaused = false;
+		super.interrupt();
 	}
 	
 	public void restart()
