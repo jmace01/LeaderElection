@@ -124,7 +124,7 @@ public class RabbitMQNetworkManager<T extends Comparable<T>> extends NetworkMana
 	 */
 	private void establishQueueConnection() throws IOException, TimeoutException
 	{
-		if (connection != null)
+		if (connection != null || stopped)
 		{
 			return;
 		}
