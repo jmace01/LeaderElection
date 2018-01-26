@@ -124,6 +124,10 @@ public class RabbitMQNetworkManager<T extends Comparable<T>> extends NetworkMana
 	 */
 	private void establishQueueConnection() throws IOException, TimeoutException
 	{
+		if (connection != null)
+		{
+			return;
+		}
 		ConnectionFactory factory = new ConnectionFactory();
         factory.setHost(queueHost);
         connection = factory.newConnection();

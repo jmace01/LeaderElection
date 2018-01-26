@@ -98,8 +98,9 @@ public class Test
         		node.interrupt();
         }
         
-        Thread.sleep(2000);
+        Thread.sleep(1000);
         
+        printMessage("Final Results");
         for (LeaderElection<String> node : nodes)
         {
         		System.out.println("[ " + node.getSelfId() + " ]\tisHead: " + node.isHead() + ",\tisLeader: " + node.isLeader() + ",\t killed: " + (paused != null && paused.getSelfId().equals(node.getSelfId()) || head != null && head.getSelfId().equals(node.getSelfId())));
