@@ -11,10 +11,57 @@ public class Test
 {
 	public static final String RMQ_HOST = "localhost";
 	public static final String RMQ_QUEUE = "TestQueue";
-	public static final long HEAD_POLL_DELAY_MS = 1200;
-	public static final long NODE_POLL_DELAY_MS = 3000;
+	public static final long HEAD_POLL_DELAY_MS = 800;
+	public static final long NODE_POLL_DELAY_MS = 2000;
 	public static final int NUM_NODES = 5;
 	public static final int NUM_LEADERS = 3; 
+	
+	private static void printMessage(String message)
+	{
+		int pad = (50 - message.length()) / 2;
+		System.out.println("==================================================");
+		System.out.println(pad > 0 ? String.format("%" + (pad + message.length()) + "s", message) : message);
+		System.out.println("==================================================");
+	}
+	
+	private static Set<LeaderElection<String>> createNodes(int numNodes, int numLeaders, String rmqHost, String rmqQueue, long headPollMS, long nodePollMS)
+	{
+		Set<LeaderElection<String>> nodes = new HashSet<>();
+		for (int i = 0; i < numNodes; i++)
+        {
+        		NetworkManager<String> manager = new RabbitMQNetworkManager<>(UUID.randomUUID().toString(), numLeaders, rmqHost, rmqQueue);
+        		LeaderElection<String> node = new LeaderElection<>(manager, headPollMS, nodePollMS); 
+        		nodes.add(node);
+        		node.start();
+        }
+		return nodes;
+	}
+	
+	private static LeaderElection<String> pauseLeader(Set<LeaderElection<String>> nodes) throws IOException
+	{
+        for (LeaderElection<String> node : nodes)
+        {
+        		if (node.isLeader() && !node.isHead())
+        		{
+        			node.pause();
+        			return node;
+        		}
+        }
+        return null;
+	}
+	
+	private static LeaderElection<String> pauseHead(Set<LeaderElection<String>> nodes) throws IOException
+	{
+		for (LeaderElection<String> node : nodes)
+        {
+        		if (node.isHead())
+        		{
+        			node.pause();
+        			return node;
+        		}
+        }
+		return null;
+	}
 	
 	/**
 	 * Simple demo
@@ -24,72 +71,31 @@ public class Test
 	 */
     public static void main(String[] args) throws InterruptedException, IOException
     {
-    		Set<LeaderElection<String>> nodes = new HashSet<>();
     		Set<String> downed = new HashSet<>();
     		
-    		System.out.println("=======================================");
-        System.out.println("      Nodes joining the network        ");
-        System.out.println("=======================================");
-    		
-        for (int i = 0; i < NUM_NODES; i++)
-        {
-        		NetworkManager<String> manager = new RabbitMQNetworkManager<>(UUID.randomUUID().toString(), NUM_LEADERS, RMQ_HOST, RMQ_QUEUE);
-        		LeaderElection<String> node = new LeaderElection<>(manager, HEAD_POLL_DELAY_MS, NODE_POLL_DELAY_MS); 
-        		nodes.add(node);
-        		node.start();
-        }
-        
+        printMessage("Nodes joinging the network");
+        Set<LeaderElection<String>> nodes = createNodes(NUM_NODES, NUM_LEADERS, RMQ_HOST, RMQ_QUEUE, HEAD_POLL_DELAY_MS, NODE_POLL_DELAY_MS);
         Thread.sleep(4000);
         
-        System.out.println("=======================================");
-        System.out.println("      Pausing down a leader node       ");
-        System.out.println("=======================================");
-        
-        LeaderElection<String> paused = null;
-        for (LeaderElection<String> node : nodes)
-        {
-        		if (node.isLeader() && !node.isHead())
-        		{
-        			paused = node;
-        			node.pause();
-        			downed.add(node.getSelfId());
-        			break;
-        		}
-        }
-        
+        printMessage("Pausing a leader node");
+        LeaderElection<String> paused = pauseLeader(nodes);
+        if (paused != null) downed.add(paused.getSelfId());
         Thread.sleep(HEAD_POLL_DELAY_MS * 2);
         
-        System.out.println("=======================================");
-        System.out.println("      Taking down the head node        ");
-        System.out.println("=======================================");
-        
-        for (LeaderElection<String> node : nodes)
-        {
-        		if (node.isHead())
-        		{
-        			node.interrupt();
-        			downed.add(node.getSelfId());
-        			break;
-        		}
-        }
-        
+        printMessage("Pausing the head node");
+        LeaderElection<String> head = pauseHead(nodes);
+        if (head != null) downed.add(head.getSelfId());
         Thread.sleep((HEAD_POLL_DELAY_MS + NODE_POLL_DELAY_MS) * 2);
         
-        System.out.println("=======================================");
-        System.out.println("         Unpausing leader node         ");
-        System.out.println("=======================================");
+        printMessage("Unpausing leader node");
+        if (paused != null) paused.unpause();
+        Thread.sleep(HEAD_POLL_DELAY_MS * 8);
         
-        if (paused != null)
-        {
-        		paused.unpause();
-        }
-        
+        printMessage("Unpausing head node");
+        if (head != null) head.unpause();
         Thread.sleep(HEAD_POLL_DELAY_MS * 3);
         
-        System.out.println("=======================================");
-        System.out.println("      Stopping all of the nodes        ");
-        System.out.println("=======================================");
-        
+        printMessage("Stopping all nodes");
         for (LeaderElection<String> node : nodes)
         {
         		node.interrupt();

@@ -16,7 +16,6 @@ import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
 import jmace.LeaderElection.messages.Request;
 import jmace.LeaderElection.messages.RequestType;
-import jmace.LeaderElection.task.ChangeSubscriber;
 
 public class RabbitMQNetworkManager<T extends Comparable<T>> extends NetworkManager<T>
 {
